@@ -24,6 +24,7 @@ app.add_middleware(
 
 class QueryRequest(BaseModel):
     query: str
+    mode: str = "full" # can be summarize, compare, or full
 
 @app.get("/")
 async def root():
@@ -36,13 +37,15 @@ async def health_check():
 @app.post("/api/research")
 async def process_research_query(req: QueryRequest):
     """
-    Orchestrates the research using LangGraph
+    Orchestrates the research using LangGraph's new Multi-Agent Workflow
     """
     config = {"configurable": {"thread_id": "api_call"}}
     input_state = {
         "query": req.query, 
+        "workflow_mode": req.mode,
         "results": [], 
-        "summaries": "", 
+        "synthesized_summary": "", 
+        "comparison_table": "",
         "messages": []
     }
     
@@ -50,9 +53,10 @@ async def process_research_query(req: QueryRequest):
     output_state = research_graph.invoke(input_state, config)
     
     return {
-        "results": output_state.get("results"),
-        "summary": output_state.get("summaries"),
-        "messages": output_state.get("messages")
+        "results": output_state.get("results", []),
+        "summary": output_state.get("synthesized_summary", ""),
+        "comparison": output_state.get("comparison_table", ""),
+        "messages": output_state.get("messages", [])
     }
 
 @app.post("/api/pdf/upload")
