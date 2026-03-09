@@ -1,12 +1,15 @@
 fastapi
 uvicorn
 langchain
+langchain-community
 langchain-google-genai
+langchain-chroma
 langgraph
 mcp
 google-generativeai
 chromadb
 pypdf
+python-multipart
 python-dotenv
 requests
 pydantic
