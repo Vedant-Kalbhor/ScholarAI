@@ -1,0 +1,13 @@
+fastapi
+uvicorn
+langchain
+langchain-google-genai
+langgraph
+mcp
+google-generativeai
+chromadb
+pypdf
+python-dotenv
+requests
+pydantic
+serpapi
