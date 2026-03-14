@@ -17,7 +17,7 @@ class ArxivTool:
         }
         
         response = requests.get(self.base_url, params=params)
-        if response.status_status != 200:
+        if response.status_code != 200:
             return []
             
         return self._parse_arxiv_response(response.text)

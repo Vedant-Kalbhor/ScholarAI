@@ -38,43 +38,60 @@ def research_node(state: AgentState):
     """
     Research Agent: Synthesizes the information retrieved from Search Agent.
     """
-    llm = ChatGoogleGenerativeAI(model="gemini-2.0-flash", google_api_key=os.getenv("GEMINI_API_KEY"))
-    
-    papers_context = "\n\n".join([f"Title: {r['title']}\nSummary: {r['summary']}" for r in state["results"]])
-    prompt = f"As an AI Research Agent, summarize the key findings from these papers related to '{state['query']}':\n\n{papers_context}"
-    
-    summary = llm.invoke(prompt).content
-    
-    return {"synthesized_summary": summary, "messages": ["Research Agent: Synthesized summaries."]}
+    try:
+        llm = ChatGoogleGenerativeAI(model="gemini-2.0-flash", google_api_key=os.getenv("GEMINI_API_KEY"))
+        
+        papers_context = "\n\n".join([f"Title: {r['title']}\nSummary: {r['summary']}" for r in state["results"]])
+        prompt = f"As an AI Research Agent, summarize the key findings from these papers related to '{state['query']}':\n\n{papers_context}"
+        
+        summary = llm.invoke(prompt).content
+        return {"synthesized_summary": summary, "messages": ["Research Agent: Synthesized summaries."]}
+    except Exception as e:
+        error_msg = f"Research Agent Error (likely quota reached): {str(e)}"
+        print(error_msg)
+        return {"synthesized_summary": "Summary generation failed.", "messages": [error_msg]}
 
 def comparison_node(state: AgentState):
     """
     Comparison Agent: Generates structured comparison tables.
     """
-    llm = ChatGoogleGenerativeAI(model="gemini-2.0-flash", google_api_key=os.getenv("GEMINI_API_KEY"))
-    
-    papers_context = "\n\n".join([f"Title: {r['title']}\nSummary: {r['summary']}" for r in state["results"]])
-    prompt = (
-        f"As an AI Comparison Agent, analyze the following papers on '{state['query']}' "
-        f"and output a Markdown table comparing their Core Focus, Methodology, and Contributions.\n\n"
-        f"Papers:\n{papers_context}"
-    )
-    
-    table = llm.invoke(prompt).content
-    
-    return {"comparison_table": table, "messages": ["Comparison Agent: Generated comparison table."]}
+    try:
+        llm = ChatGoogleGenerativeAI(model="gemini-2.0-flash", google_api_key=os.getenv("GEMINI_API_KEY"))
+        
+        papers_context = "\n\n".join([f"Title: {r['title']}\nSummary: {r['summary']}" for r in state["results"]])
+        prompt = (
+            f"As an AI Comparison Agent, analyze the following papers on '{state['query']}' "
+            f"and output a Markdown table comparing their Core Focus, Methodology, and Contributions.\n\n"
+            f"Papers:\n{papers_context}"
+        )
+        
+        table = llm.invoke(prompt).content
+        return {"comparison_table": table, "messages": ["Comparison Agent: Generated comparison table."]}
+    except Exception as e:
+        error_msg = f"Comparison Agent Error (likely quota reached): {str(e)}"
+        print(error_msg)
+        return {"comparison_table": "Comparison table generation failed.", "messages": [error_msg]}
 
-def router_node(state: AgentState) -> Literal["research_node", "comparison_node", "both"]:
+def router_node(state: AgentState):
     """
     Conditional router to dictate flow after Search.
     """
     mode = state.get("workflow_mode", "summarize")
     if mode == "compare":
-        return "comparison_node"
-    elif mode == "full":
-        return "both"
+        return "compare"
     else:
-        return "research_node"
+        # Both "full" and "summarize" go to research first
+        return "research"
+
+def research_router(state: AgentState):
+    """
+    Router after research node to decide if we should do comparison as well.
+    """
+    mode = state.get("workflow_mode", "summarize")
+    if mode == "full":
+        return "compare"
+    else:
+        return END
 
 # ----------------------------
 # Build the Graph Structure
@@ -94,13 +111,21 @@ workflow.add_conditional_edges(
     "search",
     router_node,
     {
-        "research_node": "research",
-        "comparison_node": "compare",
-        "both": ["research", "compare"] # Parallelize synthesis & compare (LangGraph 0.1+ supports parallel fan-out)
+        "research": "research",
+        "compare": "compare"
     }
 )
 
-workflow.add_edge("research", END)
+# Conditional Edge from research to compare or end
+workflow.add_conditional_edges(
+    "research",
+    research_router,
+    {
+        "compare": "compare",
+        END: END
+    }
+)
+
 workflow.add_edge("compare", END)
 
 # Compile the Graph
