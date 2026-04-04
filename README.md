@@ -79,7 +79,8 @@ SERPAPI_API_KEY=your_serpapi_key_here
 
 Run the server:
 ```bash
-uvicorn backend.app.main:app --reload
+cd backend
+uvicorn app.main:app --reload
 ```
 
 ### **3. Frontend Setup**

@@ -30,16 +30,26 @@ const App = () => {
       });
 
       const data = await resp.json();
-
       const newMessages = [];
+
+      // Planner output
+      if (data.plan && data.plan.length > 0) {
+        newMessages.push({
+          role: 'assistant',
+          text: `### Research Plan:\n${data.plan.map(p => `- ${p}`).join('\n')}`
+        });
+      }
 
       // Found results
       if (data.results && data.results.length > 0) {
         newMessages.push({ role: 'assistant', type: 'results', data: data.results });
       }
 
-      // Summary
-      if (data.summary) {
+      // Final Report
+      if (data.final_report) {
+        newMessages.push({ role: 'assistant', text: data.final_report });
+      } else if (data.summary) {
+        // Fallback for summarize mode
         newMessages.push({ role: 'assistant', text: `### Research Synthesis:\n\n${data.summary}` });
       }
 
@@ -67,7 +77,7 @@ const App = () => {
           <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-500/20">
             <BookOpen className="w-5 h-5 text-white" />
           </div>
-          <span className="font-bold text-xl tracking-tight">PaperMind</span>
+          <span className="font-bold text-xl tracking-tight">ScholarAI</span>
         </div>
 
         <nav className="flex flex-col gap-2">

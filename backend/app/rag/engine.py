@@ -1,6 +1,6 @@
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_core.documents import Document
-from backend.app.rag.vector_store import VectorStoreManager
+from app.rag.vector_store import VectorStoreManager
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain.prompts import PromptTemplate
 import os
@@ -9,7 +9,7 @@ class RAGEngine:
     def __init__(self):
         self.vector_store_manager = VectorStoreManager()
         self.llm = ChatGoogleGenerativeAI(
-            model="gemini-2.0-flash", 
+            model="gemini-2.5-flash", 
             google_api_key=os.getenv("GEMINI_API_KEY")
         )
 
