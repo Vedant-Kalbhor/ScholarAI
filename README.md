@@ -7,26 +7,28 @@ A modern, intelligent AI system designed to help researchers discover, analyze, 
 ## 🚀 Overview
 
 Researchers and students often face the daunting task of reading hundreds of papers, many of which may not be directly relevant, and then manually comparing their contributions. **AI Research Assistant** automates this by:
-- **Searching** across multiple sources (ArXiv, Google Scholar) using specialized agents.
-- **Synthesizing** key findings and contributions automatically.
-- **Comparing** papers in structured Markdown tables.
-- **Analyzing** local PDFs through a high-performance RAG pipeline.
+- **Planning**: Breaking complex queries into actionable sub-tasks.
+- **Gathering**: Concurrent searching across ArXiv, Google Scholar, and the general Web.
+- **Synthesizing**: Deep analysis using state-of-the-art LLMs.
+- **Validating**: A "Critic Agent" check to avoid hallucinations.
+- **Reporting**: Generating structured, publication-ready Markdown reports.
 
 ---
 
 ## ✨ Features
 
-- **🔍 Multi-Source Search**: Concurrent querying of ArXiv and Google Scholar.
-- **🤖 Multi-Agent Orchestration**:
-  - **Search Agent**: Intelligent retrieval of relevant metadata.
-  - **Research Agent**: Deep synthesis of paper clusters.
-  - **Comparison Agent**: Structured matrix generation for methodology and results.
-- **📄 PDF RAG Pipeline**: Upload PDFs for instant chunking, vector storage (ChromaDB), and Q&A.
+- **🔍 Multi-Source Search (Enhanced)**: Concurrent querying of ArXiv, Google Scholar, and general search (SerpAPI).
+- **🤖 Advanced Multi-Agent Orchestration**:
+  - **Planner Agent**: Breaks down queries into 3-4 research goals.
+  - **Search Agent**: Intelligent retrieval of academic and web context.
+  - **Research Agent**: Deep synthesis of retrieved sources.
+  - **Critic Agent**: Quality control loop for fact-checking and hallucination detection.
+  - **Writer Agent**: Final formatting into premium, structured reports.
+- **📄 PDF RAG Pipeline**: Upload local PDFs for instant chunking, vector storage (ChromaDB), and interactive Q&A.
 - **📊 Premium Dashboard**: 
   - Glassmorphic UI with Dark Mode.
   - "Research Timeline" visualization of LLM evolution.
   - Management of "Saved Papers" and collections.
-- **⚡ Real-time Feedback**: Intelligent loading states and error handling for API quotas.
 
 ---
 
@@ -35,10 +37,9 @@ Researchers and students often face the daunting task of reading hundreds of pap
 ### **Backend**
 - **Framework**: FastAPI (High-performance Python)
 - **Orchestration**: LangGraph (Stateful agentic workflows)
-- **AI/LLM**: Google Gemini 2.0 Flash / Pro
+- **AI/LLM**: Google Gemini 2.5 Flash / Pro
 - **Vector DB**: ChromaDB (for local RAG)
-- **PDF Extraction**: PyPDF2
-- **Integrations**: ArXiv API, SerpAPI (Google Scholar)
+- **Tools**: ArXiv API, SerpAPI (Google Scholar & Google Search)
 
 ### **Frontend**
 - **Framework**: React.js with Vite
@@ -55,7 +56,7 @@ Researchers and students often face the daunting task of reading hundreds of pap
 - Node.js 18+
 - API Keys: 
   - [Google AI Studio (Gemini)](https://aistudio.google.com/)
-  - [SerpAPI](https://serpapi.com/) (Optional, for Scholar results)
+  - [SerpAPI](https://serpapi.com/) (Required for Scholar/Web results)
 
 ### **1. Clone the Repository**
 ```bash
@@ -71,7 +72,7 @@ source venv/bin/activate  # On Windows: venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-Create a `.env` file in the root directory with the following:
+Create a `.env` file in the root directory:
 ```env
 GEMINI_API_KEY=your_gemini_key_here
 SERPAPI_API_KEY=your_serpapi_key_here
@@ -100,17 +101,17 @@ The application will be available at `http://localhost:5173`.
 ScholarAI/
 ├── backend/            # FastAPI Source Code
 │   ├── app/
-│   │   ├── agents/    # LangGraph State Machine
+│   │   ├── agents/    # LangGraph Multi-Agent Workflows
 │   │   ├── pdf/       # PDF Extraction Logic
 │   │   ├── rag/       # Vector Store & Search Logic
-│   │   └── tools/     # ArXiv & Scholar Tool Scripts
+│   │   └── tools/     # Search & Extraction Tools
 │   └── requirements.txt
 ├── frontend/           # React + Vite Application
 │   ├── src/
 │   │   ├── components/# Modular UI Components
-│   │   └── App.jsx    # Main Layout & Routing
+│   │   └── App.jsx    # Main Layout
 │   └── tailwind.config.js
-├── data/               # Local data/vector storage
+├── data/               # Vector storage
 └── README.md
 ```
 
@@ -118,7 +119,7 @@ ScholarAI/
 
 ## 🤝 Contributing
 
-Contributions are welcome! Please feel free to submit a Pull Request. For major changes, please open an issue first to discuss what you would like to change.
+Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## 📄 License
 
