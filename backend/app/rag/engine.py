@@ -48,11 +48,32 @@ class RAGEngine:
         Finds relevant documents and asks the LLM a question.
         """
         docs = self.vector_store_manager.search(query)
+        if not docs:
+            return {
+                "answer": "I could not find any indexed PDF chunks yet. Upload a PDF first, then ask your question again.",
+                "provider": "local",
+                "sources": [],
+            }
+
         context = "\n\n".join([d.page_content for d in docs])
         
         prompt = PromptTemplate.from_template(
             "You are an AI Research Assistant. Answer the question based on the provided context.\n\nContext:\n{context}\n\nQuestion:\n{query}\n\nAnswer:"
         )
-        
-        response, _provider = generate_text(prompt.format(context=context, query=query))
-        return response
+
+        response, provider = generate_text(prompt.format(context=context, query=query))
+        sources = []
+        for doc in docs[:4]:
+            sources.append(
+                {
+                    "content": doc.page_content[:500],
+                    "source": doc.metadata.get("source", "unknown"),
+                    "metadata": doc.metadata,
+                }
+            )
+
+        return {
+            "answer": response,
+            "provider": provider,
+            "sources": sources,
+        }

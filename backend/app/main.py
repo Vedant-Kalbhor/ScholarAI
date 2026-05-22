@@ -1,4 +1,5 @@
 from fastapi import FastAPI, UploadFile, File
+from fastapi import HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import os
@@ -85,6 +86,8 @@ async def upload_pdf(file: UploadFile = File(...)):
     try:
         # Extract text using PyPDF2
         raw_text = await PDFParser.extract_text_from_upload(file)
+        if not raw_text.strip():
+            raise HTTPException(status_code=400, detail="No text could be extracted from this PDF.")
         
         # Ensure RAG Engine is initialized
         engine = RAGEngine()
@@ -101,19 +104,27 @@ async def upload_pdf(file: UploadFile = File(...)):
             "chunks_stored": num_chunks,
             "summary": summary
         }
+    except HTTPException:
+        raise
     except Exception as e:
         import traceback
         traceback.print_exc()
-        return {"error": str(e)}
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
 @app.post("/api/pdf/query")
 async def query_pdf(req: QueryRequest):
     """
     Queries content previously ingested from PDFs.
     """
-    engine = RAGEngine()
-    answer = engine.ask_question(req.query)
-    
-    return {
-        "answer": answer
-    }
+    try:
+        engine = RAGEngine()
+        result = engine.ask_question(req.query)
+        return {
+            "answer": result.get("answer", ""),
+            "provider": result.get("provider", ""),
+            "sources": result.get("sources", [])
+        }
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e)) from e

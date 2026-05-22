@@ -40,20 +40,23 @@ class VectorStoreManager:
     def __init__(self, persist_directory: str = "./backend/data/chromadb", collection_name: str = "research_papers"):
         self.persist_directory = persist_directory
         self.collection_name = collection_name
-        
-        api_key = os.getenv("GEMINI_API_KEY")
-        self.embeddings = None
 
-        if api_key:
-            try:
-                self.embeddings = GoogleGenerativeAIEmbeddings(
-                    model="models/embedding-001",
-                    google_api_key=api_key,
-                )
-            except Exception:
-                self.embeddings = StableHashEmbeddings()
-        else:
-            self.embeddings = StableHashEmbeddings()
+        # Use a local, deterministic embedding fallback by default so PDF RAG
+        # works even when Gemini embedding models change or are unavailable.
+        self.embeddings = StableHashEmbeddings()
+
+        use_gemini_embeddings = os.getenv("USE_GEMINI_EMBEDDINGS", "").strip().lower() in {"1", "true", "yes"}
+        if use_gemini_embeddings:
+            api_key = os.getenv("GEMINI_API_KEY")
+            if api_key:
+                gemini_model = os.getenv("GEMINI_EMBEDDING_MODEL", "text-embedding-004")
+                try:
+                    self.embeddings = GoogleGenerativeAIEmbeddings(
+                        model=gemini_model,
+                        google_api_key=api_key,
+                    )
+                except Exception as exc:
+                    print(f"Gemini embeddings unavailable, using local fallback: {exc}")
         
         # Initialize ChromaDB
         self.vector_store = Chroma(

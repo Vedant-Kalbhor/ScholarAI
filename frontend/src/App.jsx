@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import ChatMessage from './components/ChatMessage';
 import Dashboard from './components/Dashboard';
+import PdfWorkspace from './components/PdfWorkspace';
 
 const quickPrompts = [
   'Summarize the latest papers on agentic RAG systems',
@@ -57,6 +58,7 @@ const App = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('Research');
   const [mode, setMode] = useState('full');
+  const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
   const [messages, setMessages] = useState([
     {
       role: 'assistant',
@@ -101,7 +103,6 @@ const App = () => {
     setIsLoading(true);
 
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
       const resp = await fetch(`${apiUrl}/api/research`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -196,6 +197,7 @@ const App = () => {
           <div className="mt-8 space-y-3">
             {[
               { id: 'Research', label: 'Research', icon: Search },
+              { id: 'PDF', label: 'PDF Chat', icon: FileText },
               { id: 'Dashboard', label: 'Dashboard', icon: BarChart3 },
             ].map((item) => (
               <button
@@ -271,6 +273,8 @@ const App = () => {
         <main className="flex-1 px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
           {activeTab === 'Dashboard' ? (
             <Dashboard runSummary={runSummary} />
+          ) : activeTab === 'PDF' ? (
+            <PdfWorkspace apiUrl={apiUrl} />
           ) : (
             <div className="grid gap-6 xl:grid-cols-[minmax(0,1.6fr)_minmax(320px,0.9fr)]">
               <section className="rounded-[2rem] border border-white/6 bg-white/[0.035] p-5 shadow-2xl shadow-black/20 backdrop-blur-xl sm:p-6">
