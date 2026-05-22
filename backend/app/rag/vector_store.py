@@ -1,19 +1,59 @@
 import os
+import hashlib
+import math
+import re
 from langchain_chroma import Chroma
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
+
+
+class StableHashEmbeddings:
+    """
+    Minimal local fallback embedding function for Chroma.
+
+    This keeps PDF RAG usable even when Gemini embeddings are unavailable.
+    """
+
+    def __init__(self, dimensions: int = 768):
+        self.dimensions = dimensions
+
+    def _vectorize(self, text: str):
+        vector = [0.0] * self.dimensions
+        tokens = re.findall(r"[A-Za-z0-9_]+", text.lower())
+        for token in tokens:
+            digest = hashlib.sha256(token.encode("utf-8")).digest()
+            index = int.from_bytes(digest[:4], "big") % self.dimensions
+            weight = 1.0 + (len(token) / 10.0)
+            vector[index] += weight
+
+        norm = math.sqrt(sum(value * value for value in vector))
+        if norm == 0:
+            return vector
+        return [value / norm for value in vector]
+
+    def embed_documents(self, texts):
+        return [self._vectorize(text) for text in texts]
+
+    def embed_query(self, text):
+        return self._vectorize(text)
 
 class VectorStoreManager:
     def __init__(self, persist_directory: str = "./backend/data/chromadb", collection_name: str = "research_papers"):
         self.persist_directory = persist_directory
         self.collection_name = collection_name
         
-        # Initialize Google Embeddings
-        # Uses GEMINI_API_KEY from environment via dotenv
         api_key = os.getenv("GEMINI_API_KEY")
-        if not api_key:
-            raise ValueError("GEMINI_API_KEY environment variable not set.")
-            
-        self.embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001", google_api_key=api_key)
+        self.embeddings = None
+
+        if api_key:
+            try:
+                self.embeddings = GoogleGenerativeAIEmbeddings(
+                    model="models/embedding-001",
+                    google_api_key=api_key,
+                )
+            except Exception:
+                self.embeddings = StableHashEmbeddings()
+        else:
+            self.embeddings = StableHashEmbeddings()
         
         # Initialize ChromaDB
         self.vector_store = Chroma(

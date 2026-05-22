@@ -2,43 +2,90 @@ import React from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
-import { Bot, User, FileText, CheckCircle2 } from 'lucide-react';
+import { Bot, FileText, Link2, User } from 'lucide-react';
 
 const ChatMessage = ({ message }) => {
-    const isUser = message.role === 'user';
+  const isUser = message.role === 'user';
 
+  if (message.type === 'results') {
     return (
-        <div className={`flex gap-4 p-4 rounded-2xl w-full ${isUser ? 'bg-indigo-600/10 border border-indigo-500/20 text-indigo-100 flex-row-reverse' : 'bg-white/5 border border-white/10 text-neutral-200'}`}>
-            <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${isUser ? 'bg-indigo-500' : 'bg-neutral-800 border border-neutral-700'}`}>
-                {isUser ? <User className="w-5 h-5 text-white" /> : <Bot className="w-5 h-5 text-indigo-400" />}
-            </div>
-
-            <div className={`flex flex-col gap-2 w-full max-w-[85%] ${isUser ? 'items-end' : 'items-start'}`}>
-                <div className="prose prose-invert prose-indigo max-w-none w-full text-sm leading-relaxed prose-table:border-collapse prose-th:border prose-th:border-neutral-700 prose-td:border prose-td:border-neutral-700 prose-th:bg-neutral-800 prose-td:px-4 prose-td:py-2">
-                    {message.type === 'results' ? (
-                        <div className="grid gap-3 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 w-full">
-                            {message.data.map((paper, idx) => (
-                                <div key={idx} className="bg-neutral-800/50 p-4 rounded-xl border border-neutral-700/50 hover:border-indigo-500/50 transition-colors">
-                                    <h4 className="font-semibold text-indigo-300 line-clamp-2" title={paper.title}>{paper.title}</h4>
-                                    <p className="text-xs text-neutral-400 mt-1 truncate">{paper.authors?.join(", ") || "Unknown Author"}</p>
-                                    <p className="text-xs mt-2 line-clamp-3 text-neutral-300">{paper.summary}</p>
-                                    {paper.pdf_url && (
-                                        <a href={paper.pdf_url} target="_blank" rel="noreferrer" className="inline-flex mt-3 items-center gap-1 text-xs font-medium text-indigo-400 hover:text-indigo-300">
-                                            <FileText className="w-3 h-3" /> View PDF
-                                        </a>
-                                    )}
-                                </div>
-                            ))}
-                        </div>
-                    ) : (
-                        <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>
-                            {message.text}
-                        </ReactMarkdown>
-                    )}
-                </div>
-            </div>
+      <div className="rounded-[1.75rem] border border-white/6 bg-slate-950/45 p-4 shadow-lg shadow-black/10">
+        <div className="mb-4 flex items-center gap-2 text-xs uppercase tracking-[0.25em] text-slate-500">
+          <Link2 className="h-4 w-4 text-cyan-300" />
+          Retrieved source cards
         </div>
+
+        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+          {message.data.map((paper, idx) => (
+            <div key={idx} className="rounded-2xl border border-white/5 bg-white/[0.03] p-4 transition hover:border-cyan-400/20 hover:bg-white/[0.05]">
+              <div className="flex items-start justify-between gap-3">
+                <h4 className="line-clamp-2 text-sm font-semibold leading-6 text-white" title={paper.title}>
+                  {paper.title}
+                </h4>
+                <FileText className="h-4 w-4 shrink-0 text-cyan-300" />
+              </div>
+
+              <p className="mt-2 text-xs text-slate-400">{paper.authors?.join(', ') || 'Unknown author'}</p>
+              <p className="mt-3 line-clamp-4 text-sm leading-6 text-slate-300">{paper.summary}</p>
+
+              <div className="mt-4 flex items-center justify-between gap-3">
+                <span className="rounded-full border border-white/8 bg-slate-950/50 px-2.5 py-1 text-[11px] uppercase tracking-[0.2em] text-slate-400">
+                  {paper.published ? paper.published.slice(0, 4) : 'Paper'}
+                </span>
+
+                {paper.pdf_url ? (
+                  <a
+                    href={paper.pdf_url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-1 text-xs font-medium text-cyan-300 transition hover:text-cyan-200"
+                  >
+                    Open PDF
+                    <Link2 className="h-3.5 w-3.5" />
+                  </a>
+                ) : null}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
     );
+  }
+
+  return (
+    <div
+      className={`flex gap-3 rounded-[1.75rem] border p-4 shadow-lg shadow-black/10 ${
+        isUser
+          ? 'ml-auto max-w-[92%] flex-row-reverse border-cyan-400/20 bg-cyan-400/10'
+          : 'border-white/6 bg-slate-950/45'
+      }`}
+    >
+      <div
+        className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full border ${
+          isUser ? 'border-cyan-400/20 bg-cyan-400 text-slate-950' : 'border-white/5 bg-white/[0.04]'
+        }`}
+      >
+        {isUser ? <User className="h-5 w-5" /> : <Bot className="h-5 w-5 text-cyan-300" />}
+      </div>
+
+      <div className="min-w-0 flex-1">
+        <div className="mb-2 flex items-center justify-between gap-3">
+          <p className="text-xs uppercase tracking-[0.25em] text-slate-500">{isUser ? 'You' : 'ScholarAI'}</p>
+          {message.type && !isUser ? (
+            <span className="rounded-full border border-white/8 bg-white/[0.03] px-2.5 py-1 text-[11px] uppercase tracking-[0.2em] text-slate-400">
+              {message.type}
+            </span>
+          ) : null}
+        </div>
+
+        <div className="prose prose-invert prose-slate max-w-none text-sm leading-7 prose-headings:mb-3 prose-headings:mt-4 prose-p:my-2 prose-strong:text-white prose-a:text-cyan-300 prose-table:block prose-table:overflow-x-auto prose-th:border prose-th:border-white/10 prose-td:border prose-td:border-white/10 prose-th:bg-white/[0.05] prose-td:px-3 prose-td:py-2 prose-th:px-3 prose-th:py-2">
+          <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>
+            {message.text}
+          </ReactMarkdown>
+        </div>
+      </div>
+    </div>
+  );
 };
 
 export default ChatMessage;

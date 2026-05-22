@@ -1,11 +1,10 @@
-import os
 import operator
 from typing import Annotated, TypedDict, List, Dict, Literal
 from langgraph.graph import StateGraph, START, END
-from langchain_google_genai import ChatGoogleGenerativeAI
 from app.tools.arxiv_tool import ArxivTool
 from app.tools.scholar_tool import ScholarTool
 from app.tools.search_tool import WebSearchTool
+from app.utils.llm import generate_text
 
 class AgentState(TypedDict):
     """The expanded state dictionary for our multi-agent architecture."""
@@ -25,21 +24,19 @@ def planner_node(state: AgentState):
     Planner Agent: Analyzes the query and generates a multi-step research plan.
     """
     try:
-        llm = ChatGoogleGenerativeAI(model="gemini-2.5-flash", google_api_key=os.getenv("GEMINI_API_KEY"))
-        
         prompt = (
             f"You are the Lead Research Planner. The user wants a '{state['workflow_mode']}' research workflow for: '{state['query']}'.\n"
             "Break this down into 3 specific sub-tasks (e.g., 'Identify key transformer papers', 'Analyze efficiency benchmarks', etc.).\n"
             "Output each task on a new line. Do not include numbers or bullet points."
         )
-        
-        response = llm.invoke(prompt).content
-        tasks = [t.strip("- ") for t in response.split("\n") if t.strip()]
-        
-        print(f"[AGENT] Planner Node: Created {len(tasks)} sub-tasks.")
+        response, provider = generate_text(prompt)
+        tasks = [t.strip("- ").strip() for t in response.split("\n") if t.strip()]
+        tasks = tasks[:3] if len(tasks) >= 3 else tasks
+
+        print(f"[AGENT] Planner Node: Created {len(tasks)} sub-tasks via {provider}.")
         return {
             "plan": tasks, 
-            "messages": [f"Planner Agent: Created {len(tasks)} sub-tasks for research."]
+            "messages": [f"Planner Agent: Created {len(tasks)} sub-tasks for research using {provider}."]
         }
     except Exception as e:
         print(f"Planner Agent Error: {e}")
@@ -74,8 +71,6 @@ def research_node(state: AgentState):
     Research Agent: Synthesizes academic papers and web context.
     """
     try:
-        llm = ChatGoogleGenerativeAI(model="gemini-2.5-flash", google_api_key=os.getenv("GEMINI_API_KEY"))
-        
         academic_context = "\n\n".join([f"Title: {r['title']}\nSummary: {r['summary']}" for r in state["results"]])
         web_context = "\n\n".join([f"Title: {r['title']}\nSnippet: {r['snippet']}" for r in state["web_results"]])
         
@@ -87,8 +82,8 @@ def research_node(state: AgentState):
         )
         
         print(f"[AGENT] Research Node: Synthesizing results...")
-        summary = llm.invoke(prompt).content
-        return {"synthesized_summary": summary, "messages": ["Research Agent: Synthesized summaries."]}
+        summary, provider = generate_text(prompt)
+        return {"synthesized_summary": summary, "messages": [f"Research Agent: Synthesized summaries using {provider}."]}
     except Exception as e:
         error_msg = f"Research Agent Error: {str(e)}"
         print(error_msg)
@@ -99,14 +94,12 @@ def comparison_node(state: AgentState):
     Comparison Agent: Generates structured comparison tables.
     """
     try:
-        llm = ChatGoogleGenerativeAI(model="gemini-2.5-flash", google_api_key=os.getenv("GEMINI_API_KEY"))
-        
         papers_context = "\n\n".join([f"Title: {r['title']}\nSummary: {r['summary']}" for r in state["results"]])
         prompt = f"Generate a Markdown table comparing these papers on '{state['query']}':\n\n{papers_context}"
         
         print(f"[AGENT] Comparison Node: Generating table...")
-        table = llm.invoke(prompt).content
-        return {"comparison_table": table, "messages": ["Comparison Agent: Generated comparison table."]}
+        table, provider = generate_text(prompt)
+        return {"comparison_table": table, "messages": [f"Comparison Agent: Generated comparison table using {provider}."]}
     except Exception as e:
         return {"comparison_table": "Comparison failed.", "messages": [str(e)]}
 
@@ -115,8 +108,6 @@ def critic_node(state: AgentState):
     Critic Agent: Fact-checking and quality assurance.
     """
     try:
-        llm = ChatGoogleGenerativeAI(model="gemini-2.5-flash", google_api_key=os.getenv("GEMINI_API_KEY"))
-        
         prompt = (
             "You are the QA Research Critic. Review the current synthesis and check for:\n"
             "1. Hallucinations (Is the summary supported by the results?)\n"
@@ -125,12 +116,12 @@ def critic_node(state: AgentState):
             "If satisfactory, output 'PASS'. Otherwise, provide critical feedback."
         )
         
-        feedback = llm.invoke(prompt).content
+        feedback, provider = generate_text(prompt)
         print(f"[AGENT] Critic Node: {feedback[:50]}...")
         
         return {
             "critic_feedback": feedback,
-            "messages": [f"Critic Agent: Evaluated synthesized content."]
+            "messages": [f"Critic Agent: Evaluated synthesized content using {provider}."]
         }
     except Exception as e:
         print(f"Critic Agent Error: {e}")
@@ -141,8 +132,6 @@ def writer_node(state: AgentState):
     Writer Agent: Produces the final structured research report.
     """
     try:
-        llm = ChatGoogleGenerativeAI(model="gemini-2.5-flash", google_api_key=os.getenv("GEMINI_API_KEY"))
-        
         prompt = (
             f"You are the Lead Scientific Writer. Construct a final, high-quality, structured research report for '{state['query']}'.\n"
             "Include an Introduction, Key Findings (from synthesis), and a Conclusion.\n"
@@ -151,12 +140,12 @@ def writer_node(state: AgentState):
             "Output the result in beautiful Markdown."
         )
         
-        report = llm.invoke(prompt).content
-        print(f"[AGENT] Writer Node: Report generated. Length: {len(report)}")
+        report, provider = generate_text(prompt)
+        print(f"[AGENT] Writer Node: Report generated. Length: {len(report)} via {provider}")
         
         return {
             "final_report": report,
-            "messages": ["Writer Agent: Finalized research report."]
+            "messages": [f"Writer Agent: Finalized research report using {provider}."]
         }
     except Exception as e:
         print(f"Writer Agent Error: {e}")
@@ -171,7 +160,7 @@ def critic_router(state: AgentState):
     """
     feedback = state.get("critic_feedback", "").upper()
     # Simple pass condition for the demo. In production, we'd use LLM logic for specific rework.
-    if "PASS" in feedback:
+    if feedback.strip().startswith("PASS"):
         return "writer"
     # To prevent infinite loops, we only retry once for this demo
     if any("Critic Agent: Evaluated" in m for m in state.get("messages", [])[:-1]):

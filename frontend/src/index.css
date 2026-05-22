@@ -3,8 +3,20 @@
 @tailwind utilities;
 
 @layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body,
+  html,
+  #root {
+    min-height: 100%;
+  }
+
   body {
-    @apply bg-neutral-900 text-neutral-100 antialiased;
+    @apply bg-slate-950 text-slate-100 antialiased;
+    font-feature-settings: "ss01" 1, "cv10" 1;
+    text-rendering: optimizeLegibility;
   }
 }
 
@@ -25,4 +37,27 @@
 
 .animate-slide-up {
   animation: slideUp 0.4s ease-out forwards;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+::selection {
+  background: rgba(34, 211, 238, 0.25);
+  color: #fff;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, 0.8);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.35);
+  border-radius: 999px;
+  border: 2px solid rgba(15, 23, 42, 0.8);
 }

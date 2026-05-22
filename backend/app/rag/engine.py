@@ -1,17 +1,12 @@
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_core.documents import Document
 from app.rag.vector_store import VectorStoreManager
-from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain.prompts import PromptTemplate
-import os
+from langchain_core.prompts import PromptTemplate
+from app.utils.llm import generate_text
 
 class RAGEngine:
     def __init__(self):
         self.vector_store_manager = VectorStoreManager()
-        self.llm = ChatGoogleGenerativeAI(
-            model="gemini-2.5-flash", 
-            google_api_key=os.getenv("GEMINI_API_KEY")
-        )
 
     def process_and_store_text(self, text: str, source_id: str = "unknown"):
         """
@@ -45,10 +40,8 @@ class RAGEngine:
         
         # Taking up to first 30k characters to prevent limit issues on direct summarizing
         truncated_text = text[:30000]
-        chain = prompt | self.llm
-        
-        response = chain.invoke({"text": truncated_text})
-        return response.content
+        response, _provider = generate_text(prompt.format(text=truncated_text))
+        return response
 
     def ask_question(self, query: str):
         """
@@ -61,7 +54,5 @@ class RAGEngine:
             "You are an AI Research Assistant. Answer the question based on the provided context.\n\nContext:\n{context}\n\nQuestion:\n{query}\n\nAnswer:"
         )
         
-        chain = prompt | self.llm
-        response = chain.invoke({"context": context, "query": query})
-        
-        return response.content
+        response, _provider = generate_text(prompt.format(context=context, query=query))
+        return response
