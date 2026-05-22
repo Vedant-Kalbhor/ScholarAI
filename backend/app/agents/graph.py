@@ -1,10 +1,37 @@
 import operator
-from typing import Annotated, TypedDict, List, Dict, Literal
+from typing import Annotated, TypedDict, List, Dict, Literal, Any
 from langgraph.graph import StateGraph, START, END
 from app.tools.arxiv_tool import ArxivTool
 from app.tools.scholar_tool import ScholarTool
 from app.tools.search_tool import WebSearchTool
 from app.utils.llm import generate_text
+
+
+def _as_text(value: Any) -> str:
+    """
+    Best-effort conversion for fields that should be plain strings.
+    """
+    if value is None:
+        return ""
+    if isinstance(value, str):
+        return value
+    if isinstance(value, list):
+        pieces = []
+        for item in value:
+            if isinstance(item, str):
+                pieces.append(item)
+            elif isinstance(item, dict):
+                text = item.get("text") or item.get("content") or ""
+                if text:
+                    pieces.append(str(text))
+            else:
+                text = getattr(item, "text", None) or getattr(item, "content", None)
+                if text:
+                    pieces.append(str(text))
+        return "\n".join(piece for piece in pieces if piece).strip()
+    if isinstance(value, dict):
+        return _as_text(value.get("text") or value.get("content") or "")
+    return str(value)
 
 class AgentState(TypedDict):
     """The expanded state dictionary for our multi-agent architecture."""
@@ -30,6 +57,7 @@ def planner_node(state: AgentState):
             "Output each task on a new line. Do not include numbers or bullet points."
         )
         response, provider = generate_text(prompt)
+        response = _as_text(response)
         tasks = [t.strip("- ").strip() for t in response.split("\n") if t.strip()]
         tasks = tasks[:3] if len(tasks) >= 3 else tasks
 
@@ -83,6 +111,7 @@ def research_node(state: AgentState):
         
         print(f"[AGENT] Research Node: Synthesizing results...")
         summary, provider = generate_text(prompt)
+        summary = _as_text(summary)
         return {"synthesized_summary": summary, "messages": [f"Research Agent: Synthesized summaries using {provider}."]}
     except Exception as e:
         error_msg = f"Research Agent Error: {str(e)}"
@@ -99,6 +128,7 @@ def comparison_node(state: AgentState):
         
         print(f"[AGENT] Comparison Node: Generating table...")
         table, provider = generate_text(prompt)
+        table = _as_text(table)
         return {"comparison_table": table, "messages": [f"Comparison Agent: Generated comparison table using {provider}."]}
     except Exception as e:
         return {"comparison_table": "Comparison failed.", "messages": [str(e)]}
@@ -117,6 +147,7 @@ def critic_node(state: AgentState):
         )
         
         feedback, provider = generate_text(prompt)
+        feedback = _as_text(feedback)
         print(f"[AGENT] Critic Node: {feedback[:50]}...")
         
         return {
@@ -158,7 +189,7 @@ def critic_router(state: AgentState):
     """
     Determines if content needs more work or can proceed to final report.
     """
-    feedback = state.get("critic_feedback", "").upper()
+    feedback = _as_text(state.get("critic_feedback", "")).upper()
     # Simple pass condition for the demo. In production, we'd use LLM logic for specific rework.
     if feedback.strip().startswith("PASS"):
         return "writer"

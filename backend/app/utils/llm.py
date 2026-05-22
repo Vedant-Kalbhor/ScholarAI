@@ -1,11 +1,45 @@
 import os
-from typing import Optional, Tuple
+from typing import Any, Optional, Tuple
 
 import requests
 from langchain_google_genai import ChatGoogleGenerativeAI
 
-DEFAULT_GEMINI_MODEL = "gemini-2.5-pro"
+DEFAULT_GEMINI_MODEL = "gemini-3.5-flash"
 DEFAULT_OLLAMA_MODEL = "llama3:latest"
+
+
+def _normalize_content(content: Any) -> str:
+    """
+    Convert model responses into a plain string.
+
+    Some providers return content blocks such as:
+    - str
+    - list[{"type": "text", "text": "..."}]
+    - dict-like message payloads
+
+    The research workflow expects plain text, so we flatten these shapes here.
+    """
+    if content is None:
+        return ""
+    if isinstance(content, str):
+        return content.strip()
+    if isinstance(content, list):
+        parts = []
+        for item in content:
+            if isinstance(item, str):
+                parts.append(item)
+            elif isinstance(item, dict):
+                text = item.get("text") or item.get("content") or ""
+                if text:
+                    parts.append(str(text))
+            else:
+                text = getattr(item, "text", None) or getattr(item, "content", None)
+                if text:
+                    parts.append(str(text))
+        return "\n".join(part.strip() for part in parts if part and str(part).strip()).strip()
+    if isinstance(content, dict):
+        return _normalize_content(content.get("text") or content.get("content") or "")
+    return str(content).strip()
 
 
 def _invoke_gemini(prompt: str, model: str = DEFAULT_GEMINI_MODEL) -> str:
@@ -15,7 +49,7 @@ def _invoke_gemini(prompt: str, model: str = DEFAULT_GEMINI_MODEL) -> str:
 
     llm = ChatGoogleGenerativeAI(model=model, google_api_key=api_key)
     response = llm.invoke(prompt)
-    content = getattr(response, "content", "")
+    content = _normalize_content(getattr(response, "content", ""))
     if not content:
         raise RuntimeError("Gemini returned an empty response.")
     return content
@@ -41,7 +75,7 @@ def _invoke_ollama(
     response = requests.post(f"{host}/api/chat", json=payload, timeout=180)
     response.raise_for_status()
     data = response.json()
-    content = data.get("message", {}).get("content", "").strip()
+    content = _normalize_content(data.get("message", {}).get("content", ""))
     if not content:
         raise RuntimeError("Ollama returned an empty response.")
     return content
