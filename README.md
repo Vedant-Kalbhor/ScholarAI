@@ -12,6 +12,7 @@ Researchers and students often face the daunting task of reading hundreds of pap
 - **Synthesizing**: Deep analysis using state-of-the-art LLMs.
 - **Validating**: A "Critic Agent" check to avoid hallucinations.
 - **Reporting**: Generating structured, publication-ready Markdown reports.
+- **Model Fallbacks**: Gemini first, then Groq, then local Ollama `llama3:latest`.
 
 ---
 
@@ -37,7 +38,7 @@ Researchers and students often face the daunting task of reading hundreds of pap
 ### **Backend**
 - **Framework**: FastAPI (High-performance Python)
 - **Orchestration**: LangGraph (Stateful agentic workflows)
-- **AI/LLM**: Google Gemini 2.5 Flash / Pro
+- **AI/LLM**: Google Gemini, Groq, and local Ollama fallback
 - **Vector DB**: ChromaDB (for local RAG)
 - **Tools**: ArXiv API, SerpAPI (Google Scholar & Google Search)
 
@@ -75,7 +76,10 @@ pip install -r requirements.txt
 Create a `.env` file in the root directory:
 ```env
 GEMINI_API_KEY=your_gemini_key_here
+GROQ_API_KEY=your_groq_key_here
 SERPAPI_API_KEY=your_serpapi_key_here
+GROQ_MODEL=llama-3.1-70b-versatile
+OLLAMA_MODEL=llama3:latest
 ```
 
 Run the server:
@@ -114,6 +118,64 @@ ScholarAI/
 ├── data/               # Vector storage
 └── README.md
 ```
+
+--- 
+
+## Deployment
+
+Yes, this setup works well with:
+- **Frontend:** Vercel
+- **Backend:** Render FastAPI service
+- **Vector DB:** ChromaDB persisted on a Render disk attached to the backend service
+
+### 1. Deploy the backend on Render
+
+Use the `render.yaml` blueprint in the repo root or create the service manually.
+
+If you use the blueprint:
+1. Push the repo to GitHub.
+2. In Render, create a new Blueprint from the repository.
+3. Set your secret values for `GEMINI_API_KEY`, `GROQ_API_KEY`, `SERPAPI_API_KEY`, and any Zotero values.
+4. Keep the persistent disk mounted at `/app/data`.
+5. The backend will store ChromaDB at `/app/data/chromadb`.
+
+Important Render settings:
+- Service type: `Web Service`
+- Environment: `Docker`
+- Root directory: `backend`
+- Disk mount path: `/app/data`
+- Start command: handled by the backend `Dockerfile`
+
+What the disk is doing:
+- ChromaDB writes its SQLite metadata and vector segments into that mounted path.
+- Without a disk, Render’s filesystem is ephemeral and your indexed PDFs would disappear after redeploys.
+
+### 2. Deploy the frontend on Vercel
+
+Deploy the `frontend` directory as a Vercel project.
+
+Use these settings:
+- Framework preset: `Vite`
+- Root directory: `frontend`
+- Build command: `npm run build`
+- Output directory: `dist`
+
+Set this environment variable in Vercel:
+- `VITE_API_URL` = your Render backend URL, for example `https://researchassist-backend.onrender.com`
+
+### 3. Configure backend CORS
+
+Add your Vercel domain to `BACKEND_CORS_ORIGINS` on Render, for example:
+```env
+BACKEND_CORS_ORIGINS=http://localhost:5173,http://localhost:5174,https://your-app.vercel.app
+```
+
+### 4. Local development
+
+For local testing:
+- Backend: `uvicorn app.main:app --reload`
+- Frontend: `npm run dev`
+- ChromaDB: stored under `./data/chromadb` unless `VECTOR_DB_PATH` is set
 
 ---
 

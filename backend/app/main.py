@@ -12,22 +12,33 @@ from app.agents.graph import research_graph
 
 # Load environment variables
 load_dotenv()
-# If key is not found, try looking up one directory (common when running from /backend)
-if not os.getenv("GEMINI_API_KEY"):
+# If keys are not found, try looking up one directory (common when running from /backend)
+if not any(
+    os.getenv(name)
+    for name in ("GEMINI_API_KEY", "GROQ_API_KEY", "SERPAPI_API_KEY")
+):
     env_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../.env"))
     load_dotenv(dotenv_path=env_path)
 
 app = FastAPI(title="AI Research Assistant API")
 
 # Configure CORS
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=[
+cors_origins = [
+    origin.strip()
+    for origin in os.getenv("BACKEND_CORS_ORIGINS", "").split(",")
+    if origin.strip()
+]
+if not cors_origins:
+    cors_origins = [
         "http://localhost:5173",
         "http://localhost:5174",
         "http://127.0.0.1:5173",
         "http://127.0.0.1:5174",
-    ],
+    ]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

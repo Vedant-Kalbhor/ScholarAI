@@ -2,6 +2,7 @@ import os
 import hashlib
 import math
 import re
+from pathlib import Path
 from langchain_chroma import Chroma
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
 
@@ -37,9 +38,12 @@ class StableHashEmbeddings:
         return self._vectorize(text)
 
 class VectorStoreManager:
-    def __init__(self, persist_directory: str = "./backend/data/chromadb", collection_name: str = "research_papers"):
-        self.persist_directory = persist_directory
+    def __init__(self, persist_directory: str | None = None, collection_name: str = "research_papers"):
+        default_path = Path(__file__).resolve().parents[3] / "data" / "chromadb"
+        self.persist_directory = os.getenv("VECTOR_DB_PATH", persist_directory or str(default_path))
         self.collection_name = collection_name
+
+        Path(self.persist_directory).mkdir(parents=True, exist_ok=True)
 
         # Use a local, deterministic embedding fallback by default so PDF RAG
         # works even when Gemini embedding models change or are unavailable.

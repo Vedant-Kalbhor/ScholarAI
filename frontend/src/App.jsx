@@ -36,15 +36,19 @@ const initialRunSummary = {
   planSteps: 0,
   academicResults: 0,
   webResults: 0,
-  provider: 'Ready for Gemini or local Ollama fallback',
+  provider: 'Ready for Gemini, Groq, or local Ollama fallback',
   messages: [],
   lastUpdated: null,
   finalStatus: 'Idle',
 };
 
 function parseProvider(messages = []) {
-  const providerHint = messages.find((message) => /using (gemini|ollama)/i.test(message));
+  const providerHint = messages.find((message) => /using (gemini|groq|ollama)/i.test(message));
   if (!providerHint) return 'Auto fallback enabled';
+
+  if (providerHint.toLowerCase().includes('groq')) {
+    return 'Groq';
+  }
 
   if (providerHint.toLowerCase().includes('ollama')) {
     return 'llama3:latest via Ollama';
@@ -161,7 +165,7 @@ const App = () => {
         {
           role: 'assistant',
           text:
-            'I could not reach the backend. Make sure FastAPI is running and that Gemini or the local Ollama fallback is available.',
+            'I could not reach the backend. Make sure FastAPI is running and that Gemini, Groq, or the local Ollama fallback is available.',
         },
       ]);
       setRunSummary((prev) => ({
@@ -253,7 +257,7 @@ const App = () => {
               Reliability note
             </div>
             <p className="mt-3 text-sm leading-6 text-slate-300">
-              Gemini is used first. If it fails, ScholarAI falls back to local Ollama with{' '}
+              Gemini is used first, then Groq, and the final fallback is local Ollama with{' '}
               <span className="font-semibold text-white">llama3:latest</span>.
             </p>
           </div>
@@ -289,7 +293,7 @@ const App = () => {
                     </h2>
                     <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-300 sm:text-base">
                       Run a paper search, synthesize the findings, and inspect the trace. The backend
-                      automatically switches to local Ollama when Gemini is unavailable.
+                      automatically switches from Gemini to Groq, then to local Ollama when needed.
                     </p>
                   </div>
 
@@ -438,7 +442,7 @@ const App = () => {
                     What changed
                   </div>
                   <div className="mt-4 space-y-3 text-sm leading-6 text-slate-300">
-                    <p>Local Ollama fallback is now available if Gemini fails.</p>
+                    <p>Gemini now falls back to Groq first, then to local Ollama if needed.</p>
                     <p>The backend reports provider details so the UI can show the actual execution path.</p>
                     <p>Source cards and workflow logs make the system easier to explain in interviews.</p>
                   </div>
