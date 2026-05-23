@@ -14,8 +14,8 @@ const pipeline = [
     desc: 'Checks whether the output is grounded in the provided sources.',
   },
   {
-    title: 'Cite',
-    desc: 'Prepares the final report structure for resume-friendly output.',
+    title: 'Writer',
+    desc: 'Formats the final report into structured Markdown output.',
   },
 ];
 
@@ -75,27 +75,8 @@ const Dashboard = ({ runSummary }) => {
         </div>
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1.1fr)_minmax(360px,0.9fr)]">
-        <section className="rounded-[2rem] border border-white/6 bg-white/[0.035] p-5 shadow-2xl shadow-black/20 backdrop-blur-xl sm:p-6">
-          <div className="flex items-center gap-2 text-xs uppercase tracking-[0.25em] text-slate-500">
-            <Layers3 className="h-4 w-4 text-cyan-300" />
-            Architecture flow
-          </div>
-
-          <div className="mt-5 grid gap-3 md:grid-cols-2">
-            {pipeline.map((step, index) => (
-              <div key={step.title} className="rounded-2xl border border-white/5 bg-slate-950/35 p-4">
-                <div className="flex items-center justify-between">
-                  <p className="text-sm font-semibold text-white">
-                    {index + 1}. {step.title}
-                  </p>
-                  <ArrowUpRight className="h-4 w-4 text-cyan-300" />
-                </div>
-                <p className="mt-2 text-sm leading-6 text-slate-400">{step.desc}</p>
-              </div>
-            ))}
-          </div>
-        </section>
+      
+        
 
         <section className="rounded-[2rem] border border-white/6 bg-gradient-to-br from-cyan-500/10 via-slate-900/50 to-fuchsia-500/10 p-5 shadow-2xl shadow-black/20 backdrop-blur-xl sm:p-6">
           <div className="flex items-center gap-2 text-xs uppercase tracking-[0.25em] text-slate-500">
@@ -116,7 +97,7 @@ const Dashboard = ({ runSummary }) => {
 
           
         </section>
-      </div>
+      
     </div>
   );
 };
