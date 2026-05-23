@@ -1,23 +1,5 @@
 import { Activity, ArrowUpRight, CheckCircle2, Clock3, Layers3, ShieldCheck } from 'lucide-react';
 
-const pipeline = [
-  {
-    title: 'Research',
-    desc: 'Collects papers and web context from ArXiv, Scholar, and search.',
-  },
-  {
-    title: 'Synthesize',
-    desc: 'Condenses the retrieved sources into a structured summary.',
-  },
-  {
-    title: 'Verify',
-    desc: 'Checks whether the output is grounded in the provided sources.',
-  },
-  {
-    title: 'Writer',
-    desc: 'Formats the final report into structured Markdown output.',
-  },
-];
 
 const Dashboard = ({ runSummary }) => {
   const modeLabel =
