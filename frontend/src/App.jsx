@@ -251,16 +251,7 @@ const App = () => {
             </div>
           )}
 
-          <div className="mt-8 rounded-3xl border border-white/5 bg-gradient-to-br from-cyan-500/10 via-slate-900/70 to-fuchsia-500/10 p-4">
-            <div className="flex items-center gap-2 text-xs uppercase tracking-[0.25em] text-slate-400">
-              <ShieldCheck className="h-4 w-4 text-emerald-300" />
-              Reliability note
-            </div>
-            <p className="mt-3 text-sm leading-6 text-slate-300">
-              Gemini is used first, then Groq, and the final fallback is local Ollama with{' '}
-              <span className="font-semibold text-white">llama3:latest</span>.
-            </p>
-          </div>
+          
 
           <div className="mt-8 grid grid-cols-2 gap-3 lg:grid-cols-1">
             <div className="rounded-2xl border border-white/5 bg-white/[0.04] p-4">
@@ -436,17 +427,7 @@ const App = () => {
                   </div>
                 </div>
 
-                <div className="rounded-[2rem] border border-white/6 bg-white/[0.035] p-5 shadow-2xl shadow-black/20 backdrop-blur-xl sm:p-6">
-                  <div className="flex items-center gap-2 text-xs uppercase tracking-[0.25em] text-slate-500">
-                    <FileText className="h-4 w-4 text-cyan-300" />
-                    What changed
-                  </div>
-                  <div className="mt-4 space-y-3 text-sm leading-6 text-slate-300">
-                    <p>Gemini now falls back to Groq first, then to local Ollama if needed.</p>
-                    <p>The backend reports provider details so the UI can show the actual execution path.</p>
-                    <p>Source cards and workflow logs make the system easier to explain in interviews.</p>
-                  </div>
-                </div>
+                
 
                 <div className="rounded-[2rem] border border-white/6 bg-gradient-to-br from-cyan-500/10 via-slate-900/50 to-fuchsia-500/10 p-5 shadow-2xl shadow-black/20 backdrop-blur-xl sm:p-6">
                   <div className="flex items-center gap-2 text-xs uppercase tracking-[0.25em] text-slate-500">

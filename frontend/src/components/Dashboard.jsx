@@ -114,15 +114,7 @@ const Dashboard = ({ runSummary }) => {
             ))}
           </div>
 
-          <div className="mt-6 rounded-2xl border border-emerald-400/15 bg-emerald-400/10 p-4">
-            <div className="flex items-center gap-2 text-emerald-200">
-              <ShieldCheck className="h-4 w-4" />
-              <p className="text-sm font-medium">Fallback-ready execution</p>
-            </div>
-            <p className="mt-2 text-sm leading-6 text-emerald-50/80">
-              The backend now prefers Gemini and gracefully switches to local Ollama with <span className="font-semibold">llama3:latest</span> when needed.
-            </p>
-          </div>
+          
         </section>
       </div>
     </div>

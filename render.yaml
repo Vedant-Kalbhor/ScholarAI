@@ -5,6 +5,7 @@ services:
     rootDir: backend
     plan: starter
     autoDeploy: true
+    healthCheckPath: /health
     disk:
       name: researchassist-data
       mountPath: /app/data
